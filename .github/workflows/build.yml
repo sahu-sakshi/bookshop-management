@@ -1,0 +1,49 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        compiler: [g++, clang++]
+        exclude:
+          - os: windows-latest
+            compiler: clang++
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup C++ environment
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+
+    - name: Build with Make (Linux/Mac)
+      if: matrix.os != 'windows-latest'
+      run: |
+        make
+        
+    - name: Build manually (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        g++ -std=c++17 -O2 -Wall -Wextra -o bookshop.exe main.cpp
+
+    - name: Test compilation
+      run: |
+        echo "Compilation successful!"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: bookshop-${{ matrix.os }}
+        path: |
+          bookshop*
+          !bookshop.o
